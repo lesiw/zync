@@ -79,10 +79,20 @@ func repoDir(url string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch repository: %w", err)
 	}
-	if _, err := rnr.Get("git", "-C", dir, "pull", "--rebase"); err != nil {
+	if _, err := rnr.Get("git", "-C", dir, "fetch", "--all"); err != nil {
 		return "", fmt.Errorf("failed to fetch repository updates: %w", err)
 	}
-
+	r, err := rnr.Get("git",
+		"-C", dir,
+		"rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}",
+	)
+	if err != nil {
+		return "", fmt.Errorf("failed to find tracking branch: %w", err)
+	}
+	_, err = rnr.Get("git", "-C", dir, "reset", "--hard", r.Out)
+	if err != nil {
+		return "", fmt.Errorf("failed to reset repository: %w", err)
+	}
 	return dir, nil
 }
 
